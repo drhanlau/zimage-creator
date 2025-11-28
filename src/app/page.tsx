@@ -86,7 +86,7 @@ export default function Home() {
               <h1 className="text-lg font-bold text-black">Z-image Generator</h1>
             </div>
             <div className="text-sm text-gray-500 font-medium">
-              Powered by Wavespeed AI
+              Powered by LEAD
             </div>
           </div>
         </div>
@@ -273,9 +273,24 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-gray-200 mt-auto">
         <div className="max-w-6xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between text-sm text-gray-500">
-            <p className="font-medium">© 2024 Z-image Generator. All rights reserved.</p>
-            <p className="font-medium">Built with Next.js and Wavespeed AI</p>
+          <div className="text-center text-sm text-gray-600">
+            <p className="font-medium mb-2">
+              This app is vibe coded by the team at{' '}
+              <span className="font-bold text-black">SuperN8N</span> and{' '}
+              <span className="font-bold text-black">LEAD</span>.
+            </p>
+            <p className="font-medium">
+              Visit{' '}
+              <a
+                href="https://thelead.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-black hover:underline"
+              >
+                thelead.io
+              </a>{' '}
+              for more details on our training courses.
+            </p>
           </div>
         </div>
       </footer>

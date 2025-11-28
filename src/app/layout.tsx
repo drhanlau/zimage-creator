@@ -3,7 +3,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Z-image Generator',
-  description: 'AI-powered image generation with Wavespeed AI',
+  description: 'AI-powered image generation using Z-Image from Alibaba',
   icons: {
     icon: '/favicon.ico',
   },
