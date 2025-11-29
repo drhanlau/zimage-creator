@@ -83,15 +83,20 @@ export async function POST(request: Request) {
     promptText = prompt
 
     if (!prompt || typeof prompt !== 'string') {
-      // Log failed request
-      await prisma.promptLog.create({
-        data: {
-          userEmail,
-          prompt: promptText || '',
-          status: 'failed',
-          errorMessage: 'Prompt is required',
-        },
-      })
+      // Log failed request (non-blocking)
+      try {
+        await prisma.promptLog.create({
+          data: {
+            userEmail,
+            prompt: promptText || '',
+            status: 'failed',
+            errorMessage: 'Prompt is required',
+          },
+        })
+      } catch (dbError) {
+        console.error('Failed to log to database:', dbError)
+        // Continue even if logging fails
+      }
 
       return NextResponse.json(
         { error: 'Prompt is required' },
@@ -143,16 +148,21 @@ export async function POST(request: Request) {
       const generationTime = (Date.now() - startTime) / 1000
       const imageUrl = data.data.outputs[0]
 
-      // Log successful generation
-      await prisma.promptLog.create({
-        data: {
-          userEmail,
-          prompt: promptText,
-          imageUrl,
-          status: 'success',
-          generationTime,
-        },
-      })
+      // Log successful generation (non-blocking)
+      try {
+        await prisma.promptLog.create({
+          data: {
+            userEmail,
+            prompt: promptText,
+            imageUrl,
+            status: 'success',
+            generationTime,
+          },
+        })
+      } catch (dbError) {
+        console.error('Failed to log to database:', dbError)
+        // Continue even if logging fails
+      }
 
       return NextResponse.json({ imageUrl })
     }
@@ -165,29 +175,39 @@ export async function POST(request: Request) {
       if (imageUrl) {
         const generationTime = (Date.now() - startTime) / 1000
 
-        // Log successful generation
-        await prisma.promptLog.create({
-          data: {
-            userEmail,
-            prompt: promptText,
-            imageUrl,
-            status: 'success',
-            generationTime,
-          },
-        })
+        // Log successful generation (non-blocking)
+        try {
+          await prisma.promptLog.create({
+            data: {
+              userEmail,
+              prompt: promptText,
+              imageUrl,
+              status: 'success',
+              generationTime,
+            },
+          })
+        } catch (dbError) {
+          console.error('Failed to log to database:', dbError)
+          // Continue even if logging fails
+        }
 
         return NextResponse.json({ imageUrl })
       }
 
-      // Log timeout error
-      await prisma.promptLog.create({
-        data: {
-          userEmail,
-          prompt: promptText,
-          status: 'error',
-          errorMessage: 'Image generation timed out',
-        },
-      })
+      // Log timeout error (non-blocking)
+      try {
+        await prisma.promptLog.create({
+          data: {
+            userEmail,
+            prompt: promptText,
+            status: 'error',
+            errorMessage: 'Image generation timed out',
+          },
+        })
+      } catch (dbError) {
+        console.error('Failed to log to database:', dbError)
+        // Continue even if logging fails
+      }
 
       return NextResponse.json(
         { error: 'Image generation timed out' },
@@ -195,15 +215,20 @@ export async function POST(request: Request) {
       )
     }
 
-    // Log failed generation
-    await prisma.promptLog.create({
-      data: {
-        userEmail,
-        prompt: promptText,
-        status: 'failed',
-        errorMessage: 'Failed to generate image - no output received',
-      },
-    })
+    // Log failed generation (non-blocking)
+    try {
+      await prisma.promptLog.create({
+        data: {
+          userEmail,
+          prompt: promptText,
+          status: 'failed',
+          errorMessage: 'Failed to generate image - no output received',
+        },
+      })
+    } catch (dbError) {
+      console.error('Failed to log to database:', dbError)
+      // Continue even if logging fails
+    }
 
     return NextResponse.json(
       { error: 'Failed to generate image' },
