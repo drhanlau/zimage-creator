@@ -2,8 +2,10 @@
 
 import { useState, useRef } from 'react'
 import Image from 'next/image'
+import { useSession, signOut } from 'next-auth/react'
 
 export default function Home() {
+  const { data: session } = useSession()
   const [prompt, setPrompt] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -85,8 +87,29 @@ export default function Home() {
               </div>
               <h1 className="text-lg font-bold text-black">Z-image Generator</h1>
             </div>
-            <div className="text-sm text-gray-500 font-medium">
-              Powered by LEAD
+            <div className="flex items-center gap-4">
+              {session?.user && (
+                <div className="flex items-center gap-3">
+                  <a
+                    href="/logs"
+                    className="px-4 py-1.5 bg-white border border-gray-300 text-black text-sm font-medium rounded hover:bg-gray-50 transition-colors"
+                  >
+                    View Logs
+                  </a>
+                  <span className="text-sm text-gray-600 font-medium">
+                    {session.user.email}
+                  </span>
+                  <button
+                    onClick={() => signOut()}
+                    className="px-4 py-1.5 bg-white border border-gray-300 text-black text-sm font-medium rounded hover:bg-gray-50 transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
+              <div className="text-sm text-gray-500 font-medium">
+                Powered by LEAD
+              </div>
             </div>
           </div>
         </div>

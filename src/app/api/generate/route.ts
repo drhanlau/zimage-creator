@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '../auth/[...nextauth]/route'
+import { prisma } from '@/lib/prisma'
 
 const WAVESPEED_API_KEY = process.env.WAVESPEED_API_KEY
 const WAVESPEED_API_URL = 'https://api.wavespeed.ai/api/v3/wavespeed-ai/z-image/turbo'
@@ -61,10 +64,35 @@ async function pollForResult(taskId: string, maxAttempts = 60): Promise<string |
 }
 
 export async function POST(request: Request) {
+  const startTime = Date.now()
+  let userEmail = ''
+  let promptText = ''
+
   try {
+    // Check authentication
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    userEmail = session.user?.email || 'unknown'
     const { prompt } = await request.json()
+    promptText = prompt
 
     if (!prompt || typeof prompt !== 'string') {
+      // Log failed request
+      await prisma.promptLog.create({
+        data: {
+          userEmail,
+          prompt: promptText || '',
+          status: 'failed',
+          errorMessage: 'Prompt is required',
+        },
+      })
+
       return NextResponse.json(
         { error: 'Prompt is required' },
         { status: 400 }
@@ -112,7 +140,21 @@ export async function POST(request: Request) {
 
     // Check if we got outputs directly
     if (data.data?.outputs && data.data.outputs.length > 0) {
-      return NextResponse.json({ imageUrl: data.data.outputs[0] })
+      const generationTime = (Date.now() - startTime) / 1000
+      const imageUrl = data.data.outputs[0]
+
+      // Log successful generation
+      await prisma.promptLog.create({
+        data: {
+          userEmail,
+          prompt: promptText,
+          imageUrl,
+          status: 'success',
+          generationTime,
+        },
+      })
+
+      return NextResponse.json({ imageUrl })
     }
 
     // If we got a task ID, poll for the result
@@ -121,8 +163,31 @@ export async function POST(request: Request) {
       const imageUrl = await pollForResult(data.data.id)
 
       if (imageUrl) {
+        const generationTime = (Date.now() - startTime) / 1000
+
+        // Log successful generation
+        await prisma.promptLog.create({
+          data: {
+            userEmail,
+            prompt: promptText,
+            imageUrl,
+            status: 'success',
+            generationTime,
+          },
+        })
+
         return NextResponse.json({ imageUrl })
       }
+
+      // Log timeout error
+      await prisma.promptLog.create({
+        data: {
+          userEmail,
+          prompt: promptText,
+          status: 'error',
+          errorMessage: 'Image generation timed out',
+        },
+      })
 
       return NextResponse.json(
         { error: 'Image generation timed out' },
@@ -130,12 +195,37 @@ export async function POST(request: Request) {
       )
     }
 
+    // Log failed generation
+    await prisma.promptLog.create({
+      data: {
+        userEmail,
+        prompt: promptText,
+        status: 'failed',
+        errorMessage: 'Failed to generate image - no output received',
+      },
+    })
+
     return NextResponse.json(
       { error: 'Failed to generate image' },
       { status: 500 }
     )
   } catch (error) {
     console.error('Generation error:', error)
+
+    // Log error
+    try {
+      await prisma.promptLog.create({
+        data: {
+          userEmail: userEmail || 'unknown',
+          prompt: promptText || 'unknown',
+          status: 'error',
+          errorMessage: error instanceof Error ? error.message : 'Internal server error',
+        },
+      })
+    } catch (logError) {
+      console.error('Failed to log error:', logError)
+    }
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -1,0 +1,25 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model PromptLog {
+  id             String   @id @default(cuid())
+  userEmail      String
+  prompt         String
+  imageUrl       String?
+  status         String   // "success", "failed", "error"
+  errorMessage   String?
+  generationTime Float?
+  createdAt      DateTime @default(now())
+
+  @@index([userEmail])
+  @@index([createdAt])
+}
