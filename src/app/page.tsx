@@ -90,12 +90,6 @@ export default function Home() {
             <div className="flex items-center gap-4">
               {session?.user && (
                 <div className="flex items-center gap-3">
-                  <a
-                    href="/logs"
-                    className="px-4 py-1.5 bg-white border border-gray-300 text-black text-sm font-medium rounded hover:bg-gray-50 transition-colors"
-                  >
-                    View Logs
-                  </a>
                   <span className="text-sm text-gray-600 font-medium">
                     {session.user.email}
                   </span>
